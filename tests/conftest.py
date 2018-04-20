@@ -397,7 +397,7 @@ class MongoTemporaryInstance(object):
         self._process = subprocess.Popen(['mongod', '--bind_ip', 'localhost',
                                           '--port', str(self._port),
                                           '--dbpath', self._tmpdir,
-                                          '--nojournal', '--nohttpinterface',
+                                          '--nojournal',
                                           '--noauth', '--smallfiles',
                                           '--syncdelay', '0',
                                           '--nssize', '1', ],
