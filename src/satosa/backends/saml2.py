@@ -88,40 +88,56 @@ class SAMLBackend(BackendModule, SAMLBaseModule):
             with open(p) as key_file:
                 self.encryption_keys.append(key_file.read())
 
-    def start_auth(self, context, internal_req):
+    def get_idp_entity_id(self, context):
         """
-        See super class method satosa.backends.base.BackendModule#start_auth
         :type context: satosa.context.Context
-        :type internal_req: satosa.internal_data.InternalRequest
-        :rtype: satosa.response.Response
+        :rtype: str | None
+
+        :param context: The current context
+        :return: the entity_id of the idp or None
         """
 
         # if there is only one IdP in the metadata, bypass the discovery service
         idps = self.sp.metadata.identity_providers()
         if len(idps) == 1 and "mdq" not in self.config["sp_config"]["metadata"]:
-            return self.authn_request(context, idps[0])
-
+            entity_id = idps[0]
         # if the user has selected an IdP and it is available in the context.state,
-        # then bypass discovery unless ForceAuthn is set to true and use_disco_when_forcauthn
-        # is false
-        if (self.KEY_SELECTED_IDP_FROM_DISCO in context.state
+        # then set entity_id to thata unless ForceAuthn is set to true and
+        # use_disco_when_forcauthn is false
+        elif (self.KEY_SELECTED_IDP_FROM_DISCO in context.state
                 and not context.get_decoration(Context.KEY_FORCE_AUTHN)
                 and not self.config['sp_config'][self.KEY_USE_DISCO_WHEN_FORCEAUTHN]
                 and self.KEY_REMEMBER_SELECTED_IDP_FROM_DISCO in self.config['sp_config']
                 and self.config['sp_config'][self.KEY_REMEMBER_SELECTED_IDP_FROM_DISCO]):
-            satosa_logging(logger, logging.INFO,
-                           "Bypassing discovery service. Using IdP %s" %
-                           context.state[self.KEY_SELECTED_IDP_FROM_DISCO], context.state)
-            return self.authn_request(context, context.state[self.KEY_SELECTED_IDP_FROM_DISCO])
-
-        entity_id = context.get_decoration(
+            satosa_logging(
+                logger, logging.INFO,
+                "Bypassing discovery service. Using IdP %s" %
+                context.state[self.KEY_SELECTED_IDP_FROM_DISCO],
+                context.state)
+            entity_id = context.state[self.KEY_SELECTED_IDP_FROM_DISCO]
+        else:
+            entity_id = context.get_decoration(
                 Context.KEY_MIRROR_TARGET_ENTITYID)
+            if None is not entity_id:
+                entity_id = urlsafe_b64decode(entity_id).decode("utf-8")
+
+        return entity_id
+
+    def start_auth(self, context, internal_req):
+        """
+        See super class method satosa.backends.base.BackendModule#start_auth
+        :type context: satosa.context.Context
+        :type internal_req: satosa.internal_data.InternalRequest
+        :rtype: str
+        """
+
+        entity_id = self.get_idp_entity_id(context)
+
         if None is entity_id:
             # since context is not passed to disco_query, keep the information in the state cookie
             context.state[Context.KEY_FORCE_AUTHN] = context.get_decoration(Context.KEY_FORCE_AUTHN)
             return self.disco_query()
 
-        entity_id = urlsafe_b64decode(entity_id).decode("utf-8")
         return self.authn_request(context, entity_id)
 
     def disco_query(self):
