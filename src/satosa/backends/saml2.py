@@ -40,6 +40,8 @@ class SAMLBackend(BackendModule, SAMLBaseModule):
     KEY_SP_CONFIG = 'sp_config'
     VALUE_ACR_COMPARISON_DEFAULT = 'exact'
     KEY_SELECTED_IDP_FROM_DISCO = 'selected_idp_from_disco'
+    KEY_REMEMBER_SELECTED_IDP_FROM_DISCO = 'remember_selected_idp_from_disco'
+    KEY_USE_DISCO_WHEN_FORCEAUTHN = 'use_disco_when_forceauthn'
 
     def __init__(self, outgoing, internal_attributes, config, base_url, name):
         """
@@ -62,6 +64,11 @@ class SAMLBackend(BackendModule, SAMLBaseModule):
 
         sp_config = SPConfig().load(copy.deepcopy(config[self.KEY_SP_CONFIG]), False)
         self.sp = Base(sp_config)
+
+        # If use_disco_when_forceauthn is not set in the SP config,
+        # then False is the default behaviour
+        if self.KEY_USE_DISCO_WHEN_FORCEAUTHN not in self.config['sp_config']:
+            self.config['sp_config'][self.KEY_USE_DISCO_WHEN_FORCEAUTHN] = False
 
         self.discosrv = config.get(self.KEY_DISCO_SRV)
         self.encryption_keys = []
@@ -95,9 +102,16 @@ class SAMLBackend(BackendModule, SAMLBaseModule):
             return self.authn_request(context, idps[0])
 
         # if the user has selected an IdP and it is available in the context.state,
-        # while ForceAutn is not set, then bypass discovery service
-        if self.KEY_SELECTED_IDP_FROM_DISCO in context.state and not context.get_decoration(Context.KEY_FORCE_AUTHN):
-            satosa_logging(logger, logging.DEBUG, "Bypassing discovery service. Using IdP %s" % context.state[self.KEY_SELECTED_IDP_FROM_DISCO], context.state)
+        # then bypass discovery unless ForceAuthn is set to true and use_disco_when_forcauthn
+        # is false
+        if (self.KEY_SELECTED_IDP_FROM_DISCO in context.state
+                and not context.get_decoration(Context.KEY_FORCE_AUTHN)
+                and not self.config['sp_config'][self.KEY_USE_DISCO_WHEN_FORCEAUTHN]
+                and self.KEY_REMEMBER_SELECTED_IDP_FROM_DISCO in self.config['sp_config']
+                and self.config['sp_config'][self.KEY_REMEMBER_SELECTED_IDP_FROM_DISCO]):
+            satosa_logging(logger, logging.INFO,
+                           "Bypassing discovery service. Using IdP %s" %
+                           context.state[self.KEY_SELECTED_IDP_FROM_DISCO], context.state)
             return self.authn_request(context, context.state[self.KEY_SELECTED_IDP_FROM_DISCO])
 
         entity_id = context.get_decoration(
@@ -270,8 +284,8 @@ class SAMLBackend(BackendModule, SAMLBaseModule):
             satosa_logging(logger, logging.DEBUG, "No IDP chosen for state", state, exc_info=True)
             raise SATOSAAuthenticationError(state, "No IDP chosen") from err
 
-        sp_config = self.config["sp_config"]
-        if "remember_selected_idp_from_disco" in sp_config and sp_config["remember_selected_idp_from_disco"]:
+        if (self.KEY_REMEMBER_SELECTED_IDP_FROM_DISCO in self.config['sp_config']
+                and self.config['sp_config'][self.KEY_REMEMBER_SELECTED_IDP_FROM_DISCO]):
             context.state[self.KEY_SELECTED_IDP_FROM_DISCO] = entity_id
 
         return self.authn_request(context, entity_id)

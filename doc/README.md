@@ -329,6 +329,18 @@ config:
     remember_selected_idp_from_disco: True
 ```
 
+##### Use the configured discovery service if ForceAuthn is set to true
+
+The `use_disco_when_forceauthn` parameter controls whether the user will be redirected to the configured
+discovery service when the SP sends a SAML authentication request with `ForceAuthn` set to `true`.  The
+default behaviour is `False`.
+
+```yaml
+config:
+  sp_config: [...]
+    use_disco_when_forceauthn: True
+```
+
 ### <a name="openid_plugin" style="color:#000000">OpenID Connect plugins</a>
 
 #### Backend
