@@ -168,6 +168,26 @@ class TestSAMLBackend:
         resp = samlbackend.start_auth(context, InternalRequest(None, None))
         self.assert_redirect_to_discovery_server(resp, sp_conf)
 
+    def test_redirect_to_idp_if_using_mdq_and_remember_idp_from_disco_is_true(self, context, sp_conf, idp_conf):
+        sp_conf["metadata"]["inline"] = [create_metadata_from_config_dict(idp_conf)]
+        sp_conf["metadata"]["mdq"] = ["https://mdq.example.com"]
+        sp_conf["remember_selected_idp_from_disco"] = True
+        context.state["selected_idp_from_disco"] = idp_conf['entityid']
+        samlbackend = SAMLBackend(None, INTERNAL_ATTRIBUTES, {"sp_config": sp_conf, "disco_srv": DISCOSRV_URL,},
+                                  "base_url", "saml_backend")
+        resp = samlbackend.start_auth(context, InternalRequest(None, None))
+        self.assert_redirect_to_idp(resp, idp_conf)
+
+    def test_redirect_to_disco_if_using_mdq_and_remember_idp_from_disco_is_false(self, context, sp_conf, idp_conf):
+        sp_conf["metadata"]["inline"] = [create_metadata_from_config_dict(idp_conf)]
+        sp_conf["metadata"]["mdq"] = ["https://mdq.example.com"]
+        sp_conf["remember_selected_idp_from_disco"] = False
+        context.state["selected_idp_from_disco"] = idp_conf['entityid']
+        samlbackend = SAMLBackend(None, INTERNAL_ATTRIBUTES, {"sp_config": sp_conf, "disco_srv": DISCOSRV_URL,},
+                                  "base_url", "saml_backend")
+        resp = samlbackend.start_auth(context, InternalRequest(None, None))
+        self.assert_redirect_to_discovery_server(resp, sp_conf)
+
     def test_authn_request(self, context, idp_conf):
         resp = self.samlbackend.authn_request(context, idp_conf["entityid"])
         self.assert_redirect_to_idp(resp, idp_conf)
