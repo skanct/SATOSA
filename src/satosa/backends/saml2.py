@@ -117,7 +117,7 @@ class SAMLBackend(BackendModule, SAMLBaseModule):
         entity_id = context.get_decoration(
                 Context.KEY_MIRROR_TARGET_ENTITYID)
         if None is entity_id:
-            # since context is passed to disco_query, keep the information in the state cookie
+            # since context is not passed to disco_query, keep the information in the state cookie
             context.state[Context.KEY_FORCE_AUTHN] = context.get_decoration(Context.KEY_FORCE_AUTHN)
             return self.disco_query()
 
