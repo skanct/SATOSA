@@ -102,13 +102,23 @@ class SAMLBackend(BackendModule, SAMLBaseModule):
         if len(idps) == 1 and "mdq" not in self.config["sp_config"]["metadata"]:
             entity_id = idps[0]
         # if the user has selected an IdP and it is available in the context.state,
-        # then set entity_id to thata unless ForceAuthn is set to true and
+        # then set entity_id to that unless ForceAuthn is set to true and
         # use_disco_when_forcauthn is false
-        elif (self.KEY_SELECTED_IDP_FROM_DISCO in context.state
-                and not context.get_decoration(Context.KEY_FORCE_AUTHN)
-                and not self.config['sp_config'][self.KEY_USE_DISCO_WHEN_FORCEAUTHN]
-                and self.KEY_REMEMBER_SELECTED_IDP_FROM_DISCO in self.config['sp_config']
-                and self.config['sp_config'][self.KEY_REMEMBER_SELECTED_IDP_FROM_DISCO]):
+        elif (self.KEY_REMEMBER_SELECTED_IDP_FROM_DISCO in self.config['sp_config']
+                and self.config['sp_config'][self.KEY_REMEMBER_SELECTED_IDP_FROM_DISCO]
+                and self.KEY_SELECTED_IDP_FROM_DISCO in context.state
+                and not context.get_decoration(Context.KEY_FORCE_AUTHN)):
+            satosa_logging(
+                logger, logging.INFO,
+                "Bypassing discovery service. Using IdP %s" %
+                context.state[self.KEY_SELECTED_IDP_FROM_DISCO],
+                context.state)
+            entity_id = context.state[self.KEY_SELECTED_IDP_FROM_DISCO]
+        elif (self.KEY_REMEMBER_SELECTED_IDP_FROM_DISCO in self.config['sp_config']
+                and self.config['sp_config'][self.KEY_REMEMBER_SELECTED_IDP_FROM_DISCO]
+                and self.KEY_SELECTED_IDP_FROM_DISCO in context.state
+                and context.get_decoration(Context.KEY_FORCE_AUTHN)
+                and not self.config['sp_config'][self.KEY_USE_DISCO_WHEN_FORCEAUTHN]):
             satosa_logging(
                 logger, logging.INFO,
                 "Bypassing discovery service. Using IdP %s" %
