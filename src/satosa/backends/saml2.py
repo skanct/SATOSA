@@ -42,6 +42,7 @@ class SAMLBackend(BackendModule, SAMLBaseModule):
     KEY_SELECTED_IDP_FROM_DISCO = 'selected_idp_from_disco'
     KEY_REMEMBER_SELECTED_IDP_FROM_DISCO = 'remember_selected_idp_from_disco'
     KEY_USE_DISCO_WHEN_FORCEAUTHN = 'use_disco_when_forceauthn'
+    KEY_MIRROR_SAML_FORCEAUTHN = 'mirror_saml_forceauthn'
 
     def __init__(self, outgoing, internal_attributes, config, base_url, name):
         """
@@ -214,11 +215,13 @@ class SAMLBackend(BackendModule, SAMLBaseModule):
         if authn_context:
             kwargs['requested_authn_context'] = authn_context
 
-        # If ForceAuthn is found in the state cookie, use that
-        if Context.KEY_FORCE_AUTHN in context.state:
-            kwargs['force_authn'] = context.state[Context.KEY_FORCE_AUTHN]
-        else:
-            kwargs['force_authn'] = context.get_decoration(Context.KEY_FORCE_AUTHN)
+        if (self.KEY_MIRROR_SAML_FORCEAUTHN in self.config['sp_config']
+            and self.config['sp_config'][KEY_MIRROR_SAML_FORCEAUTHN]):
+            # If ForceAuthn is found in the state cookie, use that
+            if Context.KEY_FORCE_AUTHN in context.state:
+                kwargs['force_authn'] = context.state[Context.KEY_FORCE_AUTHN]
+            else:
+                kwargs['force_authn'] = context.get_decoration(Context.KEY_FORCE_AUTHN)
 
         try:
             binding, destination = self.sp.pick_binding(
