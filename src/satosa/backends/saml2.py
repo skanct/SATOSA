@@ -189,10 +189,10 @@ class SAMLBackend(BackendModule, SAMLBaseModule):
 
     def mirror_saml_forceauthn(self, context, kwargs):
         if (self.KEY_MIRROR_SAML_FORCEAUTHN in self.config['sp_config']
-            and self.config['sp_config'][self.KEY_MIRROR_SAML_FORCEAUTHN]):
+                and self.config['sp_config'][self.KEY_MIRROR_SAML_FORCEAUTHN]):
             # If ForceAuthn is found in the state cookie, use that
             if (Context.KEY_FORCE_AUTHN in context.state
-                and context.state[Context.KEY_FORCE_AUTHN] == 'true'):
+                    and context.state[Context.KEY_FORCE_AUTHN] == 'true'):
                 kwargs['force_authn'] = context.state[Context.KEY_FORCE_AUTHN]
             elif context.get_decoration(Context.KEY_FORCE_AUTHN) == 'true':
                 kwargs['force_authn'] = context.get_decoration(Context.KEY_FORCE_AUTHN)
