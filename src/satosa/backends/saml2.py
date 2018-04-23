@@ -187,6 +187,17 @@ class SAMLBackend(BackendModule, SAMLBaseModule):
 
         return authn_context
 
+    def mirror_saml_forceauthn(self, context, kwargs):
+        if (self.KEY_MIRROR_SAML_FORCEAUTHN in self.config['sp_config']
+            and self.config['sp_config'][self.KEY_MIRROR_SAML_FORCEAUTHN]):
+            # If ForceAuthn is found in the state cookie, use that
+            if (Context.KEY_FORCE_AUTHN in context.state
+                and context.state[Context.KEY_FORCE_AUTHN] == 'true'):
+                kwargs['force_authn'] = context.state[Context.KEY_FORCE_AUTHN]
+            elif context.get_decoration(Context.KEY_FORCE_AUTHN) == 'true':
+                kwargs['force_authn'] = context.get_decoration(Context.KEY_FORCE_AUTHN)
+        return kwargs
+
     def authn_request(self, context, entity_id):
         """
         Do an authorization request on idp with given entity id.
@@ -215,13 +226,7 @@ class SAMLBackend(BackendModule, SAMLBaseModule):
         if authn_context:
             kwargs['requested_authn_context'] = authn_context
 
-        if (self.KEY_MIRROR_SAML_FORCEAUTHN in self.config['sp_config']
-            and self.config['sp_config'][KEY_MIRROR_SAML_FORCEAUTHN]):
-            # If ForceAuthn is found in the state cookie, use that
-            if Context.KEY_FORCE_AUTHN in context.state:
-                kwargs['force_authn'] = context.state[Context.KEY_FORCE_AUTHN]
-            else:
-                kwargs['force_authn'] = context.get_decoration(Context.KEY_FORCE_AUTHN)
+        kwargs = self.mirror_saml_forceauthn(context, kwargs)
 
         try:
             binding, destination = self.sp.pick_binding(

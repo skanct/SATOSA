@@ -216,6 +216,32 @@ class TestSAMLBackend:
         req_params = dict(parse_qsl(urlparse(resp.message).query))
         assert context.state[self.samlbackend.name]["relay_state"] == req_params["RelayState"]
 
+    def test_mirror_saml_forceauthn(self, context, sp_conf):
+        sp_conf["metadata"]["mdq"] = ["https://mdq.example.com"]
+        samlbackend = SAMLBackend(None, INTERNAL_ATTRIBUTES, {"sp_config": sp_conf, "disco_srv": DISCOSRV_URL,},
+                                  "base_url", "saml_backend")
+
+        context.state[Context.KEY_FORCE_AUTHN] = 'true'
+
+        kwargs = {}
+        kwargs = samlbackend.mirror_saml_forceauthn(context, kwargs)
+        assert kwargs == {}
+
+        sp_conf[samlbackend.KEY_MIRROR_SAML_FORCEAUTHN] = True
+
+        kwargs = samlbackend.mirror_saml_forceauthn(context, kwargs)
+        assert kwargs == {'force_authn': 'true'}
+
+        kwargs = {}
+        del context.state[Context.KEY_FORCE_AUTHN]
+        kwargs = samlbackend.mirror_saml_forceauthn(context, kwargs)
+        assert kwargs == {}
+
+        kwargs = {}
+        context.decorate(Context.KEY_FORCE_AUTHN, 'true')
+        kwargs = samlbackend.mirror_saml_forceauthn(context, kwargs)
+        assert kwargs == {'force_authn': 'true'}
+
     def test_authn_response(self, context, idp_conf, sp_conf):
         response_binding = BINDING_HTTP_REDIRECT
         fakesp = FakeSP(SPConfig().load(sp_conf, metadata_construction=False))
