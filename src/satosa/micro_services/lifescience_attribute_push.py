@@ -24,5 +24,5 @@ class LifeScienceAttributePush(ResponseMicroService):
             satosa_logging(logger, logging.DEBUG, "Pushing attributes for mail %s" % data.attributes.get("mail")[0], context.state)
             data.attributes.update(self.static_attributes)
             return super().process(context, data)
-        satosa_logging(logger, logging.DEBUG, "Attribute not pushed for user %s" % data.attributes.get("mail")[0],, context.state)
+        satosa_logging(logger, logging.DEBUG, "Attribute not pushed for user %s" % data.attributes.get("mail")[0], context.state)
         return super().process(context, data)
