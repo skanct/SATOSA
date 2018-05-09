@@ -1,9 +1,12 @@
 import re
+import logging
 
 from .base import ResponseMicroService
 from ..exception import SATOSAAuthenticationError
 from ..util import get_dict_defaults
+from ..logging_util import satosa_logging
 
+logger = logging.getLogger(__name__)
 
 class LifeScienceAttributePush(ResponseMicroService):
     """
@@ -14,12 +17,12 @@ class LifeScienceAttributePush(ResponseMicroService):
     def __init__(self, config, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.static_attributes = config["static_attributes"]
-        self.attribute_allow = config.get("attribute_allow", {})
+        self.whitelist_idp = config["whitelist_idp"]
 
     def process(self, context, data):
-        for attribute_name, attribute_filters in get_dict_defaults(self.attribute_allow, data.requester, data.auth_info.issuer).items():
-            if attribute_name in data.attributes:
-                if any([any(filter(re.compile(af).search, data.attributes[attribute_name])) for af in attribute_filters]):
-                    data.attributes.update(self.static_attributes)
-                    return super().process(context, data)
+        if data.attributes in self.whitelist_idp:
+            satosa_logging(logger, logging.DEBUG, "Pushing attributes for mail %s" % data.attributes.get("mail")[0], context.state)
+            data.attributes.update(self.static_attributes)
+            return super().process(context, data)
+        satosa_logging(logger, logging.DEBUG, "Attribute not pushed for user %s" % data.attributes.get("mail")[0],, context.state)
         return super().process(context, data)
