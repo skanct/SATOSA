@@ -20,7 +20,7 @@ class LifeScienceAttributePush(ResponseMicroService):
         self.whitelist_idp = config["whitelist_idp"]
 
     def process(self, context, data):
-        if data.attributes in self.whitelist_idp:
+        if data.requester in self.whitelist_idp:
             satosa_logging(logger, logging.DEBUG, "Pushing attributes for mail %s" % data.attributes.get("mail")[0], context.state)
             data.attributes.update(self.static_attributes)
             return super().process(context, data)
