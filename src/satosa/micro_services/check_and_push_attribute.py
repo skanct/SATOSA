@@ -10,7 +10,7 @@ from ..logging_util import satosa_logging
 
 logger = logging.getLogger(__name__)
 
-class LifeScienceAttributePush(ResponseMicroService):
+class CheckAndPushAttribute(ResponseMicroService):
     """
     LifeScience attributes pusher.
     A work in progress story
@@ -20,7 +20,7 @@ class LifeScienceAttributePush(ResponseMicroService):
         super().__init__(*args, **kwargs)
         self.static_attributes = config["static_attributes"]
         self.whitelist_idp = config["whitelist_idp"]
-        self.ls_webname = config["ls_webname"]
+        self.cp_webname = config["cp_webname"]
         self.attribute_value_to_search = config["attribute_value_to_search"]
 
     def process(self, context, data):
@@ -32,7 +32,7 @@ class LifeScienceAttributePush(ResponseMicroService):
                 return super().process(context, data)
 
         #Check if Issuer have desider value
-        mdq_url = self.ls_webname + "/entities/" + urllib.parse.quote(data.auth_info.issuer, safe='')
+        mdq_url = self.cp_webname + "/entities/" + urllib.parse.quote(data.auth_info.issuer, safe='')
         e = xml.etree.ElementTree.parse(urlopen(mdq_url)).getroot()
         iterator = e.getiterator()
         for key in iterator:

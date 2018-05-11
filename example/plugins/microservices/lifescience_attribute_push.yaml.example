@@ -1,0 +1,10 @@
+module: satosa.micro_services.lifescience_attribute_push.LifeScienceAttributePush
+name: LifeScienceAttributePush
+config:
+    ls_webname: "https://example.com/public"
+    static_attributes:
+        epa : "urn:example:org"
+    whitelist_idp:
+        - https://idp.example.com/idp
+    attribute_value_to_search:
+        - exampleattribute
