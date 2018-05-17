@@ -20,7 +20,7 @@ class InjectAttributeForRSIdPs(ResponseMicroService):
         super().__init__(*args, **kwargs)
         self.static_attributes = config["static_attributes"]
         self.whitelist_idp = config["whitelist_idp"]
-        self.mdq = config["mdq"]
+        self.mdq = config["mdq_url"]
         self.attribute_value_to_search = config["attribute_value_to_search"]
 
     def process(self, context, data):
