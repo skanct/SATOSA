@@ -10,7 +10,7 @@ from ..logging_util import satosa_logging
 
 logger = logging.getLogger(__name__)
 
-class CheckAndPushAttribute(ResponseMicroService):
+class InjectAttributeForRSIdPs(ResponseMicroService):
     """
     LifeScience attributes pusher.
     A work in progress story
@@ -20,7 +20,7 @@ class CheckAndPushAttribute(ResponseMicroService):
         super().__init__(*args, **kwargs)
         self.static_attributes = config["static_attributes"]
         self.whitelist_idp = config["whitelist_idp"]
-        self.cp_webname = config["cp_webname"]
+        self.mdq = config["mdq"]
         self.attribute_value_to_search = config["attribute_value_to_search"]
 
     def process(self, context, data):
@@ -32,11 +32,15 @@ class CheckAndPushAttribute(ResponseMicroService):
                 return super().process(context, data)
 
         #Check if Issuer have desider value
-        mdq_url = self.cp_webname + "/entities/" + urllib.parse.quote(data.auth_info.issuer, safe='')
-        e = xml.etree.ElementTree.parse(urlopen(mdq_url)).getroot()
+        mdq_query = self.mdq + "/entities/" + urllib.parse.quote(data.auth_info.issuer, safe='')
+        e = xml.etree.ElementTree.parse(urlopen(mdq_query)).getroot()
         iterator = e.getiterator()
+        attribute_counter = 0
         for key in iterator:
             if key.text in self.attribute_value_to_search:
+                attribute_counter += 1
+                if attribute_counter < len(self.attribute_value_to_search):
+                    continue
                 satosa_logging(logger, logging.DEBUG, "Founded attribute value. Pushing attributes for %s" % data.attributes.get("mail")[0], context.state)
                 data.attributes.update(self.static_attributes)
                 return super().process(context, data)
