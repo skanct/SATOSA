@@ -588,6 +588,16 @@ persistent NameID may also be obtained from attributes returned from the LDAP di
 LDAP microservice install the extra necessary dependencies with `pip install satosa[ldap]` and then see the
 [example config](../example/plugins/microservices/ldap_attribute_store.yaml.example).
 
+#### Inject Attribute for R&S IdPs
+
+This microservice allow SaToSa to add attribute to an authentication response. Before add them, this microservice checks if one of the conditions is met by the issuer IdP :
+* It is in a defined whitelist
+* it contains all defined attribute value
+
+Whitelist IdP and the list of all attribute to look for are defined in a config file.
+
+[example config](../example/plugins/microservices/inject_attribute_for_rs_idps.yaml.example)
+
 ### Custom plugins
 
 It's possible to write custom plugins which can be loaded by SATOSA. They have to be contained in a Python module,
